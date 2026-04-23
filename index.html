@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consensus Sleep Diary</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      background: #1a3a5c;
+      color: white;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header h1 { font-size: 20px; font-weight: 600; letter-spacing: 0.3px; }
+    header .subtitle { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+    header .spacer { flex: 1; }
+    .header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+    .header-actions button {
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.45);
+      background: rgba(255,255,255,0.12);
+      color: white;
+      transition: background 0.15s;
+    }
+    .header-actions button:hover { background: rgba(255,255,255,0.22); }
+    .header-actions .btn-import { background: rgba(255,255,255,0.22); }
+    #entry-count {
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+      white-space: nowrap;
+    }
+
+    /* ===== NAV ===== */
+    nav {
+      background: white;
+      border-bottom: 2px solid #e0e6ef;
+      display: flex;
+      padding: 0 28px;
+      gap: 4px;
+    }
+    nav button {
+      padding: 11px 18px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b7280;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    nav button:hover { color: #1a3a5c; }
+    nav button.active { color: #1a3a5c; border-bottom-color: #1a3a5c; font-weight: 600; }
+
+    /* ===== MAIN ===== */
+    main { max-width: 820px; margin: 0 auto; padding: 24px 20px; }
+
+    /* ===== TABS ===== */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 22px 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .card h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #1a3a5c;
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e5e9f0;
+      font-weight: 700;
+    }
+
+    /* ===== FORM ===== */
+    .field { margin-bottom: 18px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 6px;
+      line-height: 1.45;
+    }
+    .field input[type="text"],
+    .field input[type="date"],
+    .field input[type="time"],
+    .field input[type="number"],
+    .field select,
+    .field textarea {
+      width: 100%;
+      max-width: 380px;
+      padding: 8px 11px;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #1a1a2e;
+      background: #fafafa;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      outline: none;
+      border-color: #1a3a5c;
+      box-shadow: 0 0 0 3px rgba(26,58,92,0.12);
+      background: white;
+    }
+    .field textarea {
+      max-width: 100%;
+      min-height: 76px;
+      resize: vertical;
+    }
+    .field .hint {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    .field-calculated input {
+      background: #eff6ff !important;
+      color: #1e40af;
+      font-weight: 700;
+      font-size: 18px !important;
+      letter-spacing: 0.3px;
+      max-width: 220px !important;
+    }
+    .field-calculated input:placeholder-shown {
+      font-size: 13px !important;
+      font-weight: 400;
+      color: #9ca3af;
+    }
+
+    /* ===== VALIDATION ===== */
+    .field-error input,
+    .field-error select,
+    .field-error textarea {
+      border-color: #f87171 !important;
+      background: #fff5f5 !important;
+      box-shadow: 0 0 0 3px rgba(248,113,113,0.15) !important;
+    }
+    .field-error .radio-group label { border-color: #f87171; }
+    .field-error-msg {
+      font-size: 11px;
+      color: #b91c1c;
+      margin-top: 4px;
+      display: none;
+    }
+    .field-error .field-error-msg { display: block; }
+
+    /* ===== BREADCRUMB ===== */
+    #breadcrumb {
+      background: #f0f2f5;
+      border-bottom: 1px solid #e0e6ef;
+      padding: 7px 28px;
+      font-size: 12px;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 34px;
+    }
+    #breadcrumb .bc-sep { color: #c4cad4; }
+    #breadcrumb .bc-current { color: #374151; font-weight: 600; }
+    #breadcrumb .bc-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: #1a3a5c;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 2px 6px 2px 2px;
+      border-radius: 4px;
+      transition: background 0.12s;
+    }
+    #breadcrumb .bc-back:hover { background: #e0e6ef; }
+
+    /* ===== INCOMPLETE BADGE ===== */
+    .badge-incomplete {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #c2410c;
+      border-radius: 99px;
+      padding: 2px 9px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .field-row {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .field-row .field { flex: 1; min-width: 160px; }
+
+    /* Radio / Scale */
+    .radio-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+    .radio-group label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 400;
+      font-size: 13px;
+      color: #374151;
+      cursor: pointer;
+      padding: 5px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      background: #fafafa;
+      transition: background 0.12s, border-color 0.12s;
+      margin-bottom: 0;
+    }
+    .radio-group label:hover { background: #f0f4ff; border-color: #93a5c4; }
+    .radio-group input[type="radio"] { accent-color: #1a3a5c; }
+    .radio-group input[type="radio"]:checked + span,
+    .radio-group label:has(input:checked) {
+      background: #dbeafe;
+      border-color: #1a3a5c;
+      color: #1a3a5c;
+      font-weight: 600;
+    }
+
+    /* Yes/No inline */
+    .yesno { display: flex; gap: 12px; align-items: center; }
+    .yesno label { display: flex; align-items: center; gap: 5px; font-weight: 400; cursor: pointer; margin-bottom: 0; }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      padding: 9px 20px;
+      border-radius: 5px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn-primary { background: #1a3a5c; color: white; }
+    .btn-primary:hover { background: #15304e; }
+    .btn-secondary { background: white; color: #1a3a5c; border-color: #1a3a5c; }
+    .btn-secondary:hover { background: #f0f4ff; }
+    .btn-danger { background: white; color: #b91c1c; border-color: #b91c1c; }
+    .btn-danger:hover { background: #fef2f2; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    /* ===== ALERTS ===== */
+    .alert {
+      padding: 11px 16px;
+      border-radius: 5px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      border: 1px solid;
+    }
+    .alert-success { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+    .alert-error   { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+    .hidden { display: none !important; }
+
+    /* ===== HISTORY ===== */
+    .log-list { display: flex; flex-direction: column; gap: 10px; }
+    .log-card {
+      background: white;
+      border-radius: 8px;
+      padding: 15px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: box-shadow 0.15s, transform 0.1s;
+    }
+    .log-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); transform: translateY(-1px); }
+    .log-card-meta h3 { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+    .log-card-meta p { color: #6b7280; font-size: 12px; }
+    .log-card-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    /* ===== PRINT VIEW ===== */
+    .print-controls {
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      flex-wrap: wrap;
+      background: white;
+      border-radius: 8px;
+      padding: 18px 22px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .print-controls label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .print-controls input[type="date"],
+    .print-controls input[type="text"] {
+      padding: 7px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      font-size: 13px;
+      font-family: inherit;
+      width: 100%;
+    }
+    .print-controls .spacer { flex: 1; }
+
+    .print-table-wrapper {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      overflow-x: auto;
+    }
+    .print-table-header {
+      padding: 14px 20px 12px;
+      border-bottom: 1px solid #e0e6ef;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .print-table-header h2 { font-size: 15px; font-weight: 700; color: #1a3a5c; }
+    .print-table-header .date-range { font-size: 12px; color: #6b7280; }
+
+    .print-chunk { margin-bottom: 32px; }
+    .print-page-break { page-break-after: always; margin-bottom: 0; }
+    .print-page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 10px 14px 8px;
+      border-bottom: 2px solid #1a3a5c;
+      margin-bottom: 0;
+    }
+    .print-page-header .print-page-left { display: flex; flex-direction: column; gap: 1px; }
+    .print-page-header .print-page-title { font-size: 14px; font-weight: 700; color: #1a3a5c; }
+    .print-page-header .print-page-name  { font-size: 12px; color: #374151; font-weight: 500; }
+    .print-page-header .print-page-range { font-size: 11px; color: #6b7280; }
+
+    table.sleep-log-table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 12px;
+    }
+    table.sleep-log-table thead tr th {
+      background: #1a3a5c;
+      color: white;
+      padding: 8px 12px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      border: 1px solid #15304e;
+    }
+    table.sleep-log-table thead tr th:first-child {
+      text-align: left;
+      width: 34%;
+    }
+    table.sleep-log-table tbody tr td {
+      border: 1px solid #e0e6ef;
+      padding: 7px 10px;
+      vertical-align: top;
+      font-size: 12px;
+    }
+    table.sleep-log-table tbody tr td.q-col {
+      background: #f5f7fb;
+      font-weight: 500;
+      color: #374151;
+      border-right: 2px solid #c7d4e8;
+      width: 34%;
+      word-wrap: break-word;
+    }
+    table.sleep-log-table tbody tr:nth-child(even) td.q-col { background: #eef1f8; }
+    table.sleep-log-table tbody tr td:not(.q-col) {
+      text-align: center;
+      color: #1a1a2e;
+    }
+    table.sleep-log-table tbody tr:hover td { background-color: #fafbff; }
+    table.sleep-log-table tbody tr:hover td.q-col { background-color: #edf1f9; }
+
+    /* ===== SAVE CONFIRMATION ===== */
+    #save-confirmation {
+      background: #f0fdf4;
+      border: 2px solid #86efac;
+      border-radius: 8px;
+      padding: 28px 28px 24px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    #save-confirmation .confirm-icon { font-size: 40px; margin-bottom: 10px; }
+    #save-confirmation h2 { font-size: 18px; color: #166534; margin-bottom: 6px; }
+    #save-confirmation p { font-size: 13px; color: #4b7a5e; margin-bottom: 20px; }
+    #save-confirmation .confirm-summary {
+      display: inline-flex;
+      gap: 24px;
+      background: white;
+      border: 1px solid #bbf7d0;
+      border-radius: 6px;
+      padding: 12px 24px;
+      margin-bottom: 22px;
+      text-align: left;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    #save-confirmation .confirm-summary .stat { font-size: 12px; color: #6b7280; }
+    #save-confirmation .confirm-summary .stat strong { display: block; font-size: 15px; color: #166534; margin-top: 2px; }
+    #save-confirmation .confirm-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+    .empty-state {
+      text-align: center;
+      padding: 52px 24px;
+      color: #9ca3af;
+    }
+    .empty-state strong { font-size: 15px; color: #6b7280; }
+    .empty-state p { margin-top: 6px; font-size: 13px; }
+
+    /* ===== PRINT MEDIA ===== */
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { background: white; font-size: 9px; }
+      header, nav, .print-controls, .no-print { display: none !important; }
+      main { max-width: 100%; padding: 0; margin: 0; }
+      .tab-panel { display: none !important; }
+      #tab-print { display: block !important; }
+      .print-table-wrapper { box-shadow: none; border-radius: 0; overflow: visible; }
+      .print-table-header { padding: 8px 12px; }
+      .print-table-header h2 { font-size: 13px; }
+      .print-chunk { margin-bottom: 0; }
+      .print-page-break { page-break-after: always; }
+      .print-page-header { padding: 6px 8px 5px; }
+      .print-page-header .print-page-title { font-size: 11px; }
+      .print-page-header .print-page-range { font-size: 9px; }
+      table.sleep-log-table { page-break-inside: auto; }
+      table.sleep-log-table tr { page-break-inside: avoid; }
+      table.sleep-log-table thead { display: table-header-group; }
+      table.sleep-log-table thead tr th { padding: 4px 6px; font-size: 8px; }
+      table.sleep-log-table tbody tr td { padding: 3px 5px; font-size: 8px; }
+      table.sleep-log-table tbody tr td.q-col { font-size: 8px; width: 38%; }
+      @page { size: landscape; margin: 0.4in; }
+    }
+
+    /* ===== IMPORT WARNING BANNER ===== */
+    #import-warning {
+      background: #fffbeb;
+      border-bottom: 2px solid #f59e0b;
+      padding: 10px 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: #78350f;
+    }
+    #import-warning .warn-icon { font-size: 16px; flex-shrink: 0; }
+    #import-warning strong { font-weight: 700; }
+    #import-warning .warn-body { flex: 1; }
+    #import-warning button {
+      padding: 5px 14px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #d97706;
+      background: #fef3c7;
+      color: #78350f;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    #import-warning button:hover { background: #fde68a; }
+    #import-warning .warn-dismiss {
+      background: none;
+      border: none;
+      color: #a16207;
+      font-size: 18px;
+      padding: 0 4px;
+      cursor: pointer;
+      line-height: 1;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Consensus Sleep Diary</h1>
+    <div class="subtitle">Daily Sleep Log</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="header-actions no-print">
+    <span id="entry-count"></span>
+    <button onclick="exportData()" title="Download all entries as a JSON backup file">Export Data</button>
+    <button class="btn-import" onclick="document.getElementById('import-file').click()" title="Load entries from a previously exported JSON file">Import Data</button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('log')">Log Entry</button>
+  <button onclick="showTab('history')">History</button>
+  <button onclick="showTab('print')">Print View</button>
+</nav>
+
+<div id="breadcrumb" class="no-print"></div>
+
+<div id="import-warning" style="display:none;" class="no-print">
+  <span class="warn-icon">⚠</span>
+  <span class="warn-body">
+    <strong>Warning:</strong> Less than 7 days of history detected (oldest entry: <span id="warn-oldest-date">none</span>).
+    If you have a previously exported backup, please import it before adding more entries to avoid gaps in your data.
+  </span>
+  <button onclick="document.getElementById('import-file').click()">Import Backup</button>
+  <button class="warn-dismiss" onclick="dismissImportWarning()" title="Dismiss">&#x2715;</button>
+</div>
+
+<main>
+
+  <!-- ============================= LOG ENTRY TAB ============================= -->
+  <div id="tab-log" class="tab-panel active">
+    <div id="form-alert" class="alert hidden"></div>
+
+    <div id="save-confirmation" style="display:none;">
+      <div class="confirm-icon">&#10003;</div>
+      <h2 id="confirm-title">Entry Saved</h2>
+      <p id="confirm-subtitle"></p>
+      <div class="confirm-summary">
+        <div class="stat">Date<strong id="confirm-date"></strong></div>
+        <div class="stat">Total Sleep<strong id="confirm-sleep"></strong></div>
+        <div class="stat">Sleep Quality<strong id="confirm-quality"></strong></div>
+        <div class="stat">Rested<strong id="confirm-rested"></strong></div>
+      </div>
+      <div class="confirm-actions">
+        <button class="btn btn-primary" onclick="startNewEntry()">Log Another Entry</button>
+        <button id="confirm-back-history" class="btn btn-secondary" onclick="showTab('history')" style="display:none;">&#8592; Back to History</button>
+        <button class="btn btn-secondary" onclick="showTab('history')">View History</button>
+        <button class="btn btn-secondary" onclick="showTab('print')">Print View</button>
+      </div>
+    </div>
+
+    <form id="sleep-form" autocomplete="off">
+
+      <!-- Date -->
+      <div class="card">
+        <h2>Date</h2>
+        <div class="field">
+          <label for="f-date">Date</label>
+          <input type="date" id="f-date" name="date" required>
+        </div>
+      </div>
+
+      <!-- Sleep Schedule -->
+      <div class="card">
+        <h2>Sleep Schedule</h2>
+
+        <div class="field">
+          <label for="f-bedtime">1. What time did you get into bed?</label>
+          <input type="time" id="f-bedtime" name="bedtime">
+        </div>
+
+        <div class="field">
+          <label for="f-triedSleep">2. What time did you try to go to sleep?</label>
+          <input type="time" id="f-triedSleep" name="triedSleep">
+        </div>
+
+        <div class="field">
+          <label for="f-fallAsleep">3. How long did it take you to fall asleep?</label>
+          <input type="number" id="f-fallAsleep" name="fallAsleepMin" min="0" max="720" placeholder="0">
+          <div class="hint">Minutes</div>
+        </div>
+
+        <div class="field">
+          <label for="f-awakenings">4. How many times did you wake up, not counting your final awakening?</label>
+          <input type="number" id="f-awakenings" name="awakenings" min="0" max="99" placeholder="0">
+          <div class="hint">Number of times</div>
+        </div>
+
+        <div class="field">
+          <label for="f-awakeningMin">5. In total, how long did these awakenings last?</label>
+          <input type="number" id="f-awakeningMin" name="awakeningMin" min="0" max="720" placeholder="0">
+          <div class="hint">Minutes total</div>
+        </div>
+      </div>
+
+      <!-- Final Awakening -->
+      <div class="card">
+        <h2>Final Awakening</h2>
+
+        <div class="field">
+          <label for="f-finalAwakening">6a. What time was your final awakening?</label>
+          <input type="time" id="f-finalAwakening" name="finalAwakening">
+        </div>
+
+        <div class="field">
+          <label for="f-inBedAfter">6b. After your final awakening, how long did you spend in bed trying to sleep?</label>
+          <input type="number" id="f-inBedAfter" name="inBedAfterMin" min="0" max="720" placeholder="0">
+          <div class="hint">Minutes</div>
+        </div>
+
+        <div class="field">
+          <label>6c. Did you wake up earlier than you planned?</label>
+          <div class="yesno">
+            <label><input type="radio" name="earlierThanPlanned" value="yes"> Yes</label>
+            <label><input type="radio" name="earlierThanPlanned" value="no"> No</label>
+          </div>
+        </div>
+
+        <div class="field" id="earlier-min-field" style="display:none;">
+          <label for="f-earlierMin">6d. If yes, how much earlier?</label>
+          <input type="number" id="f-earlierMin" name="earlierMin" min="0" max="720" placeholder="0">
+          <div class="hint">Minutes</div>
+        </div>
+
+        <div class="field">
+          <label for="f-outOfBed">7. What time did you get out of bed for the day?</label>
+          <input type="time" id="f-outOfBed" name="outOfBed">
+        </div>
+      </div>
+
+      <!-- Sleep Quality -->
+      <div class="card">
+        <h2>Sleep Quality</h2>
+
+        <div class="field field-calculated">
+          <label for="f-totalSleep">8. In total, how long did you sleep?</label>
+          <input type="text" id="f-totalSleep" name="totalSleep" placeholder="Auto-calculated from entries above" readonly>
+          <div class="hint">Calculated from: time tried to sleep → final awakening, minus fall-asleep time and awakenings.</div>
+        </div>
+
+        <div class="field">
+          <label>9. How would you rate your quality of sleep?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="sleepQuality" value="1"> 1 – Very poor</label>
+            <label><input type="radio" name="sleepQuality" value="2"> 2 – Poor</label>
+            <label><input type="radio" name="sleepQuality" value="3"> 3 – Fair</label>
+            <label><input type="radio" name="sleepQuality" value="4"> 4 – Good</label>
+            <label><input type="radio" name="sleepQuality" value="5"> 5 – Very good</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>10. How rested or refreshed did you feel when you woke up for the day?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="rested" value="0"> 0 – Not at all rested</label>
+            <label><input type="radio" name="rested" value="1"> 1 – Slightly rested</label>
+            <label><input type="radio" name="rested" value="2"> 2 – Somewhat rested</label>
+            <label><input type="radio" name="rested" value="3"> 3 – Fairly well rested</label>
+            <label><input type="radio" name="rested" value="4"> 4 – Well rested</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Naps -->
+      <div class="card">
+        <h2>Naps &amp; Dozing</h2>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="f-naps">11a. How many times did you nap or doze?</label>
+            <input type="number" id="f-naps" name="naps" min="0" max="99" placeholder="0">
+            <div class="hint">Number of times</div>
+          </div>
+          <div class="field">
+            <label for="f-napMin">11b. In total, how long did you nap or doze?</label>
+            <input type="number" id="f-napMin" name="napMin" min="0" max="720" placeholder="0">
+            <div class="hint">Minutes total</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alcohol & Caffeine -->
+      <div class="card">
+        <h2>Alcohol &amp; Caffeine</h2>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="f-alcoholDrinks">12a. How many drinks containing alcohol did you have?</label>
+            <input type="number" id="f-alcoholDrinks" name="alcoholDrinks" min="0" max="99" placeholder="0">
+            <div class="hint">Number of drinks</div>
+          </div>
+          <div class="field">
+            <label for="f-lastAlcohol">12b. What time was your last drink?</label>
+            <input type="time" id="f-lastAlcohol" name="lastAlcohol">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="f-caffeineDrinks">13a. How many caffeinated drinks did you have?</label>
+            <input type="number" id="f-caffeineDrinks" name="caffeineDrinks" min="0" max="99" placeholder="0">
+            <div class="hint">Number of drinks</div>
+          </div>
+          <div class="field">
+            <label for="f-lastCaffeine">13b. What time was your last drink?</label>
+            <input type="time" id="f-lastCaffeine" name="lastCaffeine">
+          </div>
+        </div>
+      </div>
+
+      <!-- Medications & Notes -->
+      <div class="card">
+        <h2>Medications &amp; Notes</h2>
+
+        <div class="field">
+          <label for="f-medications">14. Did you take any over-the-counter or prescription medications to help you sleep? If so, list medications, dose, and time taken.</label>
+          <textarea id="f-medications" name="medications" placeholder="e.g., Melatonin 5mg at 10:00 PM&#10;Benadryl 25mg at 9:30 PM"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="f-comments">15. Comments (if applicable)</label>
+          <textarea id="f-comments" name="comments" placeholder="Any additional notes about your sleep…"></textarea>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="card">
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" id="submit-btn">Save Entry</button>
+          <button type="button" class="btn btn-secondary" onclick="resetForm()">Clear</button>
+          <button type="button" class="btn btn-danger hidden" id="delete-btn" onclick="deleteCurrentEntry()">Delete Entry</button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- ============================= HISTORY TAB ============================= -->
+  <div id="tab-history" class="tab-panel">
+    <div id="history-alert" class="alert hidden"></div>
+    <div id="log-list" class="log-list"></div>
+  </div>
+
+  <!-- ============================= PRINT TAB ============================= -->
+  <div id="tab-print" class="tab-panel">
+
+    <div class="print-controls no-print">
+      <label style="flex:2;min-width:180px;">
+        Patient Name
+        <input type="text" id="patient-name" placeholder="e.g. Jane Smith"
+               oninput="localStorage.setItem('sleepDiary_patientName', this.value); renderPrintTable()">
+      </label>
+      <label>
+        From
+        <input type="date" id="print-from">
+      </label>
+      <label>
+        To
+        <input type="date" id="print-to">
+      </label>
+      <button class="btn btn-secondary" onclick="renderPrintTable()">Update</button>
+      <div class="spacer"></div>
+      <button class="btn btn-primary" onclick="window.print()">Print / Save PDF</button>
+    </div>
+
+    <div class="print-table-wrapper">
+      <div class="print-table-header no-print">
+        <h2>Consensus Sleep Diary</h2>
+        <span class="date-range" id="print-date-range"></span>
+      </div>
+      <div id="print-table-container">
+        <div class="empty-state">
+          <strong>No entries to display.</strong>
+          <p>Add sleep log entries, then return here to print.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="no-print" style="
+  background: white;
+  border-top: 1px solid #e0e6ef;
+  padding: 12px 28px;
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.5;
+">
+  <span style="font-size:15px;">&#128274;</span>
+  <span>
+    <strong style="color:#374151;">Your data stays on this device.</strong>
+    All entries are saved in this browser's local storage only — they are not uploaded anywhere and will not appear in other browsers or on other devices.
+    Use <strong style="color:#374151;">Export Data</strong> regularly to save a backup file, and <strong style="color:#374151;">Import Data</strong> to restore it if you switch browsers or clear your browser data.
+  </span>
+</footer>
+
+<script>
+// ============================================================
+// STORAGE
+// ============================================================
+
+const STORAGE_KEY = 'sleepDiary_v1';
+
+function getLogs() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function saveLogs(logs) {
+  logs.sort((a, b) => a.date.localeCompare(b.date));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+}
+
+// ============================================================
+// UTILITIES
+// ============================================================
+
+function timeToMin(t) {
+  if (!t) return null;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function minToDisplay(min) {
+  if (min === null || min === undefined || isNaN(min) || min < 0) return '';
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
+function fmt12(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2,'0')} ${period}`;
+}
+
+function fmtDate(dateStr, opts) {
+  if (!dateStr) return '';
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', opts || {
+    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+  });
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function calcTotalSleep(data) {
+  // Total sleep = (finalAwakening - triedSleep) - fallAsleepMin - awakeningMin - inBedAfterMin
+  const tried   = timeToMin(data.triedSleep);
+  const wakeup  = timeToMin(data.finalAwakening);
+  if (tried === null || wakeup === null) return null;
+
+  let span = wakeup - tried;
+  if (span < 0) span += 24 * 60; // crossed midnight
+
+  span -= (parseInt(data.fallAsleepMin) || 0);
+  span -= (parseInt(data.awakeningMin)  || 0);
+  span -= (parseInt(data.inBedAfterMin) || 0);
+
+  return Math.max(0, span);
+}
+
+// ============================================================
+// TABS + BREADCRUMB + HISTORY API
+// ============================================================
+
+const TAB_ORDER = ['log', 'history', 'print'];
+const TAB_LABELS = { log: 'Log Entry', history: 'History', print: 'Print View' };
+
+// nav stack for breadcrumbs: array of { tab, label }
+let navStack = [];
+
+function updateBreadcrumb() {
+  const el = document.getElementById('breadcrumb');
+  if (!navStack.length) { el.innerHTML = ''; return; }
+
+  const parts = navStack.map((item, i) => {
+    if (i === navStack.length - 1) {
+      return `<span class="bc-current">${item.label}</span>`;
+    }
+    return `<button class="bc-back" onclick="breadcrumbNav(${i})">&#8592; ${item.label}</button>
+            <span class="bc-sep">/</span>`;
+  });
+  el.innerHTML = parts.join('');
+}
+
+function breadcrumbNav(stackIndex) {
+  if (formDirty && !confirmDiscard()) return;
+  const target = navStack[stackIndex];
+  navStack = navStack.slice(0, stackIndex + 1);
+  _activateTab(target.tab, false);
+  history.replaceState({ tab: target.tab }, '');
+  updateBreadcrumb();
+}
+
+function showTab(name, label, pushHistory = true) {
+  // Guard: warn if form is dirty and we're navigating away from the log tab
+  const currentTab = navStack.length ? navStack[navStack.length - 1].tab : null;
+  if (currentTab === 'log' && name !== 'log' && formDirty) {
+    if (!confirmDiscard()) return;
+  }
+
+  const resolvedLabel = label || TAB_LABELS[name];
+
+  // Build nav stack: if going to a tab already in the stack, pop back to it
+  const existingIdx = navStack.findIndex(n => n.tab === name);
+  if (existingIdx >= 0) {
+    navStack = navStack.slice(0, existingIdx + 1);
+    navStack[existingIdx].label = resolvedLabel;
+  } else {
+    navStack.push({ tab: name, label: resolvedLabel });
+  }
+
+  if (pushHistory) history.pushState({ tab: name }, '', `#${name}`);
+  _activateTab(name, true);
+  updateBreadcrumb();
+}
+
+function _activateTab(name, resetLogState) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('nav button')[TAB_ORDER.indexOf(name)].classList.add('active');
+  if (name === 'log' && resetLogState) {
+    document.getElementById('save-confirmation').style.display = 'none';
+    document.getElementById('sleep-form').style.display = '';
+    clearValidation();
+  }
+  if (name === 'history') renderHistory();
+  if (name === 'print')   renderPrintTable();
+}
+
+window.addEventListener('popstate', e => {
+  const tab = e.state && e.state.tab;
+  if (!tab) return;
+  if (formDirty && !confirmDiscard()) {
+    // Re-push the current state so the URL stays correct
+    history.pushState({ tab: navStack[navStack.length - 1].tab }, '');
+    return;
+  }
+  // Pop navStack back to match
+  const idx = navStack.findIndex(n => n.tab === tab);
+  if (idx >= 0) navStack = navStack.slice(0, idx + 1);
+  _activateTab(tab, false);
+  updateBreadcrumb();
+});
+
+// ============================================================
+// FORM LOGIC
+// ============================================================
+
+let currentEditId = null;
+let formDirty = false;
+
+function setDirty() { formDirty = true; }
+function clearDirty() { formDirty = false; }
+
+function confirmDiscard() {
+  return confirm('You have unsaved changes. Leave anyway and discard them?');
+}
+
+// Mark form dirty on any input interaction
+document.getElementById('sleep-form').addEventListener('input', setDirty);
+document.getElementById('sleep-form').addEventListener('change', setDirty);
+
+// Warn on browser close/refresh if dirty
+window.addEventListener('beforeunload', e => {
+  if (formDirty) { e.preventDefault(); e.returnValue = ''; }
+});
+
+function resetForm(keepDate, skipDuplicateCheck) {
+  document.getElementById('sleep-form').reset();
+  currentEditId = null;
+  clearDirty();
+  document.getElementById('submit-btn').textContent = 'Save Entry';
+  document.getElementById('delete-btn').classList.add('hidden');
+  document.getElementById('f-totalSleep').value = '';
+  document.getElementById('earlier-min-field').style.display = 'none';
+  if (!keepDate) {
+    document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  }
+  clearValidation();
+  if (!skipDuplicateCheck) {
+    checkDuplicateDate(document.getElementById('f-date').value);
+  }
+}
+
+function populateForm(data) {
+  const map = {
+    'f-date':         'date',
+    'f-bedtime':      'bedtime',
+    'f-triedSleep':   'triedSleep',
+    'f-fallAsleep':   'fallAsleepMin',
+    'f-awakenings':   'awakenings',
+    'f-awakeningMin': 'awakeningMin',
+    'f-finalAwakening':'finalAwakening',
+    'f-inBedAfter':   'inBedAfterMin',
+    'f-earlierMin':   'earlierMin',
+    'f-outOfBed':     'outOfBed',
+    'f-naps':         'naps',
+    'f-napMin':       'napMin',
+    'f-alcoholDrinks':'alcoholDrinks',
+    'f-lastAlcohol':  'lastAlcohol',
+    'f-caffeineDrinks':'caffeineDrinks',
+    'f-lastCaffeine': 'lastCaffeine',
+    'f-medications':  'medications',
+    'f-comments':     'comments',
+  };
+  for (const [id, key] of Object.entries(map)) {
+    const el = document.getElementById(id);
+    if (el && data[key] !== undefined && data[key] !== null) el.value = data[key];
+  }
+  // Radios
+  for (const name of ['earlierThanPlanned', 'sleepQuality', 'rested']) {
+    const val = data[name];
+    if (val !== undefined && val !== null && val !== '') {
+      const r = document.querySelector(`input[name="${name}"][value="${val}"]`);
+      if (r) r.checked = true;
+    }
+  }
+  // Computed display
+  if (data.totalSleepMin !== undefined && data.totalSleepMin !== null) {
+    document.getElementById('f-totalSleep').value = minToDisplay(data.totalSleepMin);
+  }
+  updateEarlierField();
+}
+
+function readForm() {
+  const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  const radio = name => {
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : '';
+  };
+  const data = {
+    date:              g('f-date'),
+    bedtime:           g('f-bedtime'),
+    triedSleep:        g('f-triedSleep'),
+    fallAsleepMin:     g('f-fallAsleep'),
+    awakenings:        g('f-awakenings'),
+    awakeningMin:      g('f-awakeningMin'),
+    finalAwakening:    g('f-finalAwakening'),
+    inBedAfterMin:     g('f-inBedAfter'),
+    earlierThanPlanned:radio('earlierThanPlanned'),
+    earlierMin:        g('f-earlierMin'),
+    outOfBed:          g('f-outOfBed'),
+    sleepQuality:      radio('sleepQuality'),
+    rested:            radio('rested'),
+    naps:              g('f-naps'),
+    napMin:            g('f-napMin'),
+    alcoholDrinks:     g('f-alcoholDrinks'),
+    lastAlcohol:       g('f-lastAlcohol'),
+    caffeineDrinks:    g('f-caffeineDrinks'),
+    lastCaffeine:      g('f-lastCaffeine'),
+    medications:       g('f-medications'),
+    comments:          g('f-comments'),
+  };
+  data.totalSleepMin = calcTotalSleep(data);
+  return data;
+}
+
+function updateEarlierField() {
+  const yes = document.querySelector('input[name="earlierThanPlanned"][value="yes"]');
+  document.getElementById('earlier-min-field').style.display =
+    (yes && yes.checked) ? '' : 'none';
+}
+
+function refreshTotalSleep() {
+  const data = readForm();
+  const min = calcTotalSleep(data);
+  document.getElementById('f-totalSleep').value = minToDisplay(min);
+}
+
+function showConfirmation(data, isEdit) {
+  document.getElementById('sleep-form').style.display = 'none';
+  const el = document.getElementById('save-confirmation');
+  el.style.display = 'block';
+
+  document.getElementById('confirm-title').textContent = isEdit ? 'Entry Updated' : 'Entry Saved';
+  document.getElementById('confirm-subtitle').textContent = isEdit
+    ? 'Your changes have been saved successfully.'
+    : 'Your sleep entry has been recorded successfully.';
+  document.getElementById('confirm-date').textContent =
+    fmtDate(data.date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  document.getElementById('confirm-sleep').textContent  = minToDisplay(data.totalSleepMin) || '—';
+  document.getElementById('confirm-quality').textContent = data.sleepQuality ? `${data.sleepQuality} – ${QUALITY[data.sleepQuality]}` : '—';
+  document.getElementById('confirm-rested').textContent  = data.rested !== '' && data.rested !== undefined ? RESTED[data.rested] : '—';
+
+  // Show "Back to History" if that's where the user came from
+  const backBtn = document.getElementById('confirm-back-history');
+  const prevTab = navStack.length >= 2 ? navStack[navStack.length - 2].tab : null;
+  backBtn.style.display = prevTab === 'history' ? '' : 'none';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function startNewEntry() {
+  document.getElementById('save-confirmation').style.display = 'none';
+  document.getElementById('sleep-form').style.display = '';
+  resetForm();
+  // Update breadcrumb to reflect new-entry context
+  const top = navStack[navStack.length - 1];
+  if (top) top.label = TAB_LABELS['log'];
+  updateBreadcrumb();
+}
+
+// ============================================================
+// VALIDATION
+// ============================================================
+
+// Fields that must be filled to consider an entry complete.
+// Format: { id, label, type: 'input'|'radio' }
+const REQUIRED_FIELDS = [
+  { id: 'f-bedtime',        label: '1. Bedtime',              type: 'input' },
+  { id: 'f-triedSleep',     label: '2. Tried to sleep',       type: 'input' },
+  { id: 'f-fallAsleep',     label: '3. Fall asleep time',     type: 'input' },
+  { id: 'f-awakenings',     label: '4. # Awakenings',         type: 'input' },
+  { id: 'f-awakeningMin',   label: '5. Awakening time',       type: 'input' },
+  { id: 'f-finalAwakening', label: '6a. Final awakening',     type: 'input' },
+  { id: 'f-inBedAfter',     label: '6b. In bed after',        type: 'input' },
+  { id: null,               label: '6c. Earlier than planned',type: 'radio', name: 'earlierThanPlanned' },
+  { id: 'f-outOfBed',       label: '7. Out of bed',           type: 'input' },
+  { id: null,               label: '9. Sleep quality',        type: 'radio', name: 'sleepQuality' },
+  { id: null,               label: '10. Rested/refreshed',    type: 'radio', name: 'rested' },
+];
+
+function fieldHasValue(f) {
+  if (f.type === 'radio') {
+    return !!document.querySelector(`input[name="${f.name}"]:checked`);
+  }
+  return document.getElementById(f.id).value.trim() !== '';
+}
+
+function isComplete(log) {
+  const radioFilled = name => log[name] !== undefined && log[name] !== null && log[name] !== '';
+  return log.bedtime && log.triedSleep && log.fallAsleepMin !== '' && log.fallAsleepMin !== undefined
+      && log.awakenings !== '' && log.awakenings !== undefined
+      && log.awakeningMin !== '' && log.awakeningMin !== undefined
+      && log.finalAwakening && log.inBedAfterMin !== '' && log.inBedAfterMin !== undefined
+      && radioFilled('earlierThanPlanned')
+      && log.outOfBed
+      && radioFilled('sleepQuality')
+      && radioFilled('rested');
+}
+
+function clearValidation() {
+  document.querySelectorAll('.field-error').forEach(el => {
+    el.classList.remove('field-error');
+    const msg = el.querySelector('.field-error-msg');
+    if (msg) msg.remove();
+  });
+}
+
+function validateForm() {
+  clearValidation();
+  const missing = REQUIRED_FIELDS.filter(f => !fieldHasValue(f));
+  if (!missing.length) return true;
+
+  missing.forEach(f => {
+    let anchor;
+    if (f.type === 'radio') {
+      anchor = document.querySelector(`input[name="${f.name}"]`);
+    } else {
+      anchor = document.getElementById(f.id);
+    }
+    if (!anchor) return;
+    const fieldDiv = anchor.closest('.field');
+    if (!fieldDiv) return;
+    fieldDiv.classList.add('field-error');
+    if (!fieldDiv.querySelector('.field-error-msg')) {
+      const msg = document.createElement('div');
+      msg.className = 'field-error-msg';
+      msg.textContent = 'This field is required.';
+      fieldDiv.appendChild(msg);
+    }
+  });
+
+  // Scroll to first error
+  const first = document.querySelector('.field-error');
+  if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  showFormAlert(`Please fill in ${missing.length} required field${missing.length > 1 ? 's' : ''} highlighted below.`, 'error');
+  return false;
+}
+
+// Clear field error as soon as the user fills it in
+REQUIRED_FIELDS.forEach(f => {
+  if (f.type === 'radio') {
+    document.querySelectorAll(`input[name="${f.name}"]`).forEach(r => {
+      r.addEventListener('change', () => {
+        const fieldDiv = r.closest('.field');
+        if (fieldDiv) {
+          fieldDiv.classList.remove('field-error');
+          const msg = fieldDiv.querySelector('.field-error-msg');
+          if (msg) msg.remove();
+        }
+      });
+    });
+  } else {
+    const el = document.getElementById(f.id);
+    if (el) {
+      el.addEventListener('input', () => {
+        const fieldDiv = el.closest('.field');
+        if (fieldDiv && el.value.trim()) {
+          fieldDiv.classList.remove('field-error');
+          const msg = fieldDiv.querySelector('.field-error-msg');
+          if (msg) msg.remove();
+        }
+      });
+    }
+  }
+});
+
+// ============================================================
+// DUPLICATE DATE CHECK
+// ============================================================
+
+function checkDuplicateDate(dateVal) {
+  if (!dateVal || currentEditId) return; // skip when editing existing entry
+  const existing = getLogs().find(l => l.date === dateVal);
+  if (existing) {
+    showFormAlert('An entry already exists for this date. Find it in History to edit it.', 'error');
+  } else {
+    document.getElementById('form-alert').classList.add('hidden');
+  }
+}
+
+document.getElementById('f-date').addEventListener('change', function () {
+  checkDuplicateDate(this.value);
+});
+
+function showFormAlert(msg, type) {
+  const el = document.getElementById('form-alert');
+  el.className = `alert alert-${type}`;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.add('hidden'), 5000);
+}
+
+// Form submit
+// Prevent Enter from submitting the form (allow it inside textareas)
+document.getElementById('sleep-form').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
+});
+
+document.getElementById('sleep-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const data = readForm();
+  if (!data.date) { showFormAlert('Please select a date.', 'error'); return; }
+  if (!validateForm()) return;
+
+  const logs = getLogs();
+
+  if (currentEditId) {
+    const idx = logs.findIndex(l => l.id === currentEditId);
+    if (idx >= 0) logs[idx] = { ...logs[idx], ...data };
+    saveLogs(logs);
+    updateEntryCount();
+    clearDirty();
+    showConfirmation(data, true);
+  } else {
+    if (logs.find(l => l.date === data.date)) {
+      showFormAlert('An entry already exists for this date. Find it in History to edit it.', 'error');
+      return;
+    }
+    data.id = uid();
+    logs.push(data);
+    saveLogs(logs);
+    updateEntryCount();
+    clearDirty();
+    showConfirmation(data, false);
+  }
+});
+
+// Auto-calc total sleep on input
+['f-triedSleep','f-finalAwakening','f-fallAsleep','f-awakeningMin','f-inBedAfter'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('change', refreshTotalSleep);
+  el.addEventListener('input', refreshTotalSleep);
+});
+document.querySelectorAll('input[name="earlierThanPlanned"]').forEach(r => {
+  r.addEventListener('change', updateEarlierField);
+});
+
+function editLog(id) {
+  const log = getLogs().find(l => l.id === id);
+  if (!log) return;
+  resetForm(false, true);          // skipDuplicateCheck=true since we're editing
+  currentEditId = id;              // set AFTER resetForm (resetForm nulls it out)
+  populateForm(log);
+  clearDirty();                    // populated form isn't "dirty" yet
+  document.getElementById('submit-btn').textContent = 'Update Entry';
+  document.getElementById('delete-btn').classList.remove('hidden');
+  const dateLabel = fmtDate(log.date, { month: 'short', day: 'numeric', year: 'numeric' });
+  showTab('log', `Edit Entry – ${dateLabel}`);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteCurrentEntry() {
+  if (!currentEditId) return;
+  if (!confirm('Delete this entry? This cannot be undone.')) return;
+  saveLogs(getLogs().filter(l => l.id !== currentEditId));
+  updateEntryCount();
+  clearDirty();
+  resetForm(false, true);
+  showFormAlert('Entry deleted.', 'success');
+}
+
+// ============================================================
+// HISTORY
+// ============================================================
+
+const QUALITY = ['','Very poor','Poor','Fair','Good','Very good'];
+const RESTED  = ['Not at all rested','Slightly rested','Somewhat rested','Fairly well rested','Well rested'];
+
+function renderHistory() {
+  const logs = getLogs().slice().reverse();
+  const container = document.getElementById('log-list');
+
+  if (!logs.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <strong>No entries yet.</strong>
+        <p>Use the Log Entry tab to record your first night.</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = logs.map(log => {
+    const dateLabel = fmtDate(log.date, {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+    const sleep   = log.totalSleepMin != null ? minToDisplay(log.totalSleepMin) : '—';
+    const quality = log.sleepQuality ? `${log.sleepQuality} – ${QUALITY[log.sleepQuality]}` : '—';
+    const rested  = log.rested !== '' && log.rested !== undefined ? RESTED[log.rested] : '—';
+    const incomplete = !isComplete(log);
+    return `
+      <div class="log-card" onclick="editLog('${log.id}')">
+        <div class="log-card-meta">
+          <h3>${dateLabel}${incomplete ? ' &nbsp;<span class="badge-incomplete">&#9888; Incomplete</span>' : ''}</h3>
+          <p>Sleep: <strong>${sleep}</strong> &nbsp;·&nbsp; Quality: <strong>${quality}</strong> &nbsp;·&nbsp; Rested: <strong>${rested}</strong></p>
+        </div>
+        <div class="log-card-actions">
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editLog('${log.id}')">Edit</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ============================================================
+// PRINT VIEW
+// ============================================================
+
+const PRINT_ROWS = [
+  { label: '1. What time did you get into bed?',                                                                                          fn: d => fmt12(d.bedtime) },
+  { label: '2. What time did you try to go to sleep?',                                                                                    fn: d => fmt12(d.triedSleep) },
+  { label: '3. How long did it take you to fall asleep?',                                                                                 fn: d => d.fallAsleepMin !== '' && d.fallAsleepMin !== undefined ? d.fallAsleepMin + ' min' : '' },
+  { label: '4. How many times did you wake up, not counting your final awakening?',                                                       fn: d => d.awakenings },
+  { label: '5. In total, how long did these awakenings last?',                                                                            fn: d => d.awakeningMin !== '' && d.awakeningMin !== undefined ? d.awakeningMin + ' min' : '' },
+  { label: '6a. What time was your final awakening?',                                                                                     fn: d => fmt12(d.finalAwakening) },
+  { label: '6b. After your final awakening, how long did you spend in bed trying to sleep?',                                             fn: d => d.inBedAfterMin !== '' && d.inBedAfterMin !== undefined ? d.inBedAfterMin + ' min' : '' },
+  { label: '6c. Did you wake up earlier than you planned?',                                                                               fn: d => d.earlierThanPlanned === 'yes' ? 'Yes' : d.earlierThanPlanned === 'no' ? 'No' : '' },
+  { label: '6d. If yes, how much earlier?',                                                                                               fn: d => (d.earlierThanPlanned === 'yes' && d.earlierMin) ? d.earlierMin + ' min' : '' },
+  { label: '7. What time did you get out of bed for the day?',                                                                            fn: d => fmt12(d.outOfBed) },
+  { label: '8. In total, how long did you sleep?',                                                                                        fn: d => minToDisplay(d.totalSleepMin) },
+  { label: '9. How would you rate your quality of sleep?',                                                                                fn: d => d.sleepQuality ? `${d.sleepQuality} – ${QUALITY[d.sleepQuality]}` : '' },
+  { label: '10. How rested or refreshed did you feel when you woke up for the day?',                                                     fn: d => d.rested !== '' && d.rested !== undefined ? `${d.rested} – ${RESTED[d.rested]}` : '' },
+  { label: '11a. How many times did you nap or doze?',                                                                                   fn: d => d.naps },
+  { label: '11b. In total, how long did you nap or doze?',                                                                               fn: d => d.napMin !== '' && d.napMin !== undefined ? d.napMin + ' min' : '' },
+  { label: '12a. How many drinks containing alcohol did you have?',                                                                       fn: d => d.alcoholDrinks },
+  { label: '12b. What time was your last drink? (alcohol)',                                                                               fn: d => fmt12(d.lastAlcohol) },
+  { label: '13a. How many caffeinated drinks did you have?',                                                                              fn: d => d.caffeineDrinks },
+  { label: '13b. What time was your last drink? (caffeine)',                                                                              fn: d => fmt12(d.lastCaffeine) },
+  { label: '14. Did you take any over-the-counter or prescription medications to help you sleep? If so, list medications, dose, and time taken.', fn: d => d.medications },
+  { label: '15. Comments (if applicable)',                                                                                                fn: d => d.comments },
+];
+
+// Returns the Monday of the week containing dateStr
+function weekMonday(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const day = d.getDay(); // 0=Sun
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().split('T')[0];
+}
+
+function addDays(dateStr, n) {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().split('T')[0];
+}
+
+function renderPrintTable() {
+  const allLogs = getLogs();
+  const from = document.getElementById('print-from').value;
+  const to   = document.getElementById('print-to').value;
+
+  let filteredLogs = allLogs;
+  if (from) filteredLogs = filteredLogs.filter(l => l.date >= from);
+  if (to)   filteredLogs = filteredLogs.filter(l => l.date <= to);
+
+  const container = document.getElementById('print-table-container');
+  const rangeEl   = document.getElementById('print-date-range');
+
+  if (!filteredLogs.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <strong>No entries in this date range.</strong>
+        <p>Adjust the date range above or add more entries.</p>
+      </div>`;
+    rangeEl.textContent = '';
+    return;
+  }
+
+  // Index all logs by date for fast lookup
+  const logByDate = {};
+  allLogs.forEach(l => { logByDate[l.date] = l; });
+
+  // Find unique week Mondays that contain at least one entry in the filtered range
+  const weekSet = new Set(filteredLogs.map(l => weekMonday(l.date)));
+  const weeks = [...weekSet].sort();
+
+  // Expand each week to its full 7 days, pairing each date with its log (or null)
+  const chunks = weeks.map(monday =>
+    Array.from({ length: 7 }, (_, i) => {
+      const date = addDays(monday, i);
+      return { date, log: logByDate[date] || null };
+    })
+  );
+
+  // Overall date range label for the on-screen header
+  const firstEntry = filteredLogs[0].date;
+  const lastEntry  = filteredLogs[filteredLogs.length - 1].date;
+  rangeEl.textContent = firstEntry === lastEntry
+    ? fmtDate(firstEntry, { month: 'long', day: 'numeric', year: 'numeric' })
+    : `${fmtDate(firstEntry, { month: 'long', day: 'numeric', year: 'numeric' })} – ${fmtDate(lastEntry, { month: 'long', day: 'numeric', year: 'numeric' })}`;
+
+  const patientName = (document.getElementById('patient-name').value || '').trim();
+
+  function buildTable(chunk, pageNum, totalPages) {
+    const weekStart = fmtDate(chunk[0].date, { month: 'long', day: 'numeric', year: 'numeric' });
+    const weekEnd   = fmtDate(chunk[6].date, { month: 'long', day: 'numeric' });
+    const pageLabel = totalPages > 1 ? ` &nbsp;·&nbsp; Page ${pageNum} of ${totalPages}` : '';
+    const nameHtml  = patientName ? `<span class="print-page-name">${patientName}</span>` : '';
+
+    let t = `<div class="print-page-header">
+      <div class="print-page-left">
+        <span class="print-page-title">Consensus Sleep Diary</span>
+        ${nameHtml}
+      </div>
+      <span class="print-page-range">${weekStart} – ${weekEnd}${pageLabel}</span>
+    </div>`;
+
+    t += '<table class="sleep-log-table"><thead><tr><th>Question</th>';
+    chunk.forEach(({ date }) => {
+      t += `<th>${fmtDate(date, { weekday: 'short', month: 'short', day: 'numeric' })}<br>
+            <span style="font-weight:400;font-size:9px;">${fmtDate(date, { year: 'numeric' })}</span></th>`;
+    });
+    t += '</tr></thead><tbody>';
+
+    PRINT_ROWS.forEach(row => {
+      t += '<tr>';
+      t += `<td class="q-col">${row.label}</td>`;
+      chunk.forEach(({ log }) => {
+        const val = log ? row.fn(log) : '';
+        t += `<td>${val !== null && val !== undefined ? val : ''}</td>`;
+      });
+      t += '</tr>';
+    });
+
+    t += '</tbody></table>';
+    return t;
+  }
+
+  const html = chunks.map((chunk, i) => {
+    const isLast = i === chunks.length - 1;
+    return `<div class="print-chunk${isLast ? '' : ' print-page-break'}">${buildTable(chunk, i + 1, chunks.length)}</div>`;
+  }).join('');
+
+  container.innerHTML = html;
+}
+
+// ============================================================
+// EXPORT / IMPORT
+// ============================================================
+
+function updateEntryCount() {
+  const n = getLogs().length;
+  const el = document.getElementById('entry-count');
+  if (el) el.textContent = n === 0 ? '' : `${n} entr${n === 1 ? 'y' : 'ies'}`;
+}
+
+const WARN_DISMISS_KEY = 'sleepDiary_warnDismissed';
+
+function checkImportWarning() {
+  if (sessionStorage.getItem(WARN_DISMISS_KEY)) return;
+  const logs = getLogs();
+  const banner  = document.getElementById('import-warning');
+  const oldestEl = document.getElementById('warn-oldest-date');
+
+  if (!logs.length) {
+    oldestEl.textContent = 'none';
+    banner.style.display = 'flex';
+    return;
+  }
+
+  const oldest   = logs[0].date; // sorted ascending
+  const daysDiff = (Date.now() - new Date(oldest + 'T12:00:00').getTime()) / 86400000;
+
+  if (daysDiff < 7) {
+    oldestEl.textContent = fmtDate(oldest, { month: 'long', day: 'numeric', year: 'numeric' });
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+function dismissImportWarning() {
+  sessionStorage.setItem(WARN_DISMISS_KEY, '1');
+  document.getElementById('import-warning').style.display = 'none';
+}
+
+function exportData() {
+  const logs = getLogs();
+  if (!logs.length) { alert('No entries to export yet.'); return; }
+  const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), entries: logs }, null, 2);
+  const blob = new Blob([payload], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = new Date().toISOString().split('T')[0];
+  a.href     = url;
+  a.download = `sleep-diary-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      const incoming = Array.isArray(parsed) ? parsed
+                     : Array.isArray(parsed.entries) ? parsed.entries
+                     : null;
+      if (!incoming) throw new Error('Unrecognized file format.');
+
+      const existing = getLogs();
+      const existingDates = new Set(existing.map(l => l.date));
+      let added = 0, skipped = 0;
+
+      incoming.forEach(entry => {
+        if (!entry.date) return;
+        if (existingDates.has(entry.date)) { skipped++; return; }
+        if (!entry.id) entry.id = uid();
+        existing.push(entry);
+        existingDates.add(entry.date);
+        added++;
+      });
+
+      saveLogs(existing);
+      updateEntryCount();
+      initPrintRange();
+      checkImportWarning();
+
+      const msg = added
+        ? `Imported ${added} entr${added === 1 ? 'y' : 'ies'}.${skipped ? ` Skipped ${skipped} duplicate date${skipped > 1 ? 's' : ''}.` : ''}`
+        : `Nothing new to import — all ${skipped} date${skipped > 1 ? 's' : ''} already exist.`;
+      alert(msg);
+    } catch (err) {
+      alert('Import failed: ' + err.message);
+    } finally {
+      event.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+
+function initPrintRange() {
+  const logs = getLogs();
+  if (logs.length) {
+    document.getElementById('print-from').value = logs[0].date;
+    document.getElementById('print-to').value   = logs[logs.length - 1].date;
+  } else {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('print-from').value = today;
+    document.getElementById('print-to').value   = today;
+  }
+}
+
+resetForm(false, false);
+initPrintRange();
+updateEntryCount();
+checkImportWarning();
+const savedName = localStorage.getItem('sleepDiary_patientName');
+if (savedName) document.getElementById('patient-name').value = savedName;
+// Seed initial nav state
+navStack = [{ tab: 'log', label: TAB_LABELS['log'] }];
+history.replaceState({ tab: 'log' }, '', '#log');
+updateBreadcrumb();
+</script>
+</body>
+</html>
